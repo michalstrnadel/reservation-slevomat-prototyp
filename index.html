@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
+<title>Rezervační plachta - Prototyp UX variant</title>
+<style>
+  :root {
+    --header-bg: #1E293B;
+    --header-text: #FFFFFF;
+    --primary-blue: #0EA5E9;
+    --accent-orange: #F97316;
+    --bg-white: #FFFFFF;
+    --bg-surface: #F8FAFC;
+    --bg-weekend: #FFFDE7;
+    --bg-today: #FFF7ED;
+    --text-primary: #0F172A;
+    --text-secondary: #64748B;
+    --text-muted: #94A3B8;
+    --border-light: #E2E8F0;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', sans-serif;
+    background: var(--bg-white);
+    color: var(--text-primary);
+    overflow: hidden;
+    height: 100dvh;
+    width: 100%;
+    max-width: 100vw;
+    display: flex;
+    flex-direction: column;
+    touch-action: none;
+  }
+
+  /* ===== HEADER ===== */
+  .header {
+    background: var(--header-bg);
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 12px;
+    flex-shrink: 0;
+    z-index: 10;
+  }
+  .header-left { display: flex; align-items: center; gap: 12px; }
+  .header-left svg { color: var(--header-text); flex-shrink: 0; }
+  .hotel-info { display: flex; flex-direction: column; gap: 1px; }
+  .hotel-name { color: var(--header-text); font-size: 15px; font-weight: 600; }
+  .hotel-sub { color: #94A3B8; font-size: 10px; }
+  .header-right { display: flex; align-items: center; gap: 12px; }
+  .header-right svg { color: var(--header-text); }
+  .btn-new {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--primary-blue); color: white; border: none;
+    border-radius: 6px; padding: 6px 12px; font-size: 12px; font-weight: 600; cursor: pointer;
+  }
+
+  /* ===== CALENDAR BAR ===== */
+  .calendar-bar {
+    height: 40px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 10px;
+    border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+  }
+  .cal-title { font-size: 18px; font-weight: 700; }
+  .cal-controls { display: flex; align-items: center; gap: 8px; }
+  .month-label { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  .nav-btn {
+    width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--border-light); border-radius: 6px; background: none; cursor: pointer; color: var(--text-secondary);
+  }
+  .nav-btn:active { background: var(--bg-surface); }
+
+  /* ===== GRID ===== */
+  .grid-wrapper { flex: 1; display: flex; flex-direction: column; overflow: hidden; position: relative; }
+
+  .date-header {
+    display: flex; height: 42px; background: var(--bg-surface);
+    border-bottom: 1px solid var(--border-light); flex-shrink: 0;
+  }
+  .room-col-header {
+    width: 58px; min-width: 58px; display: flex; align-items: center;
+    justify-content: space-between; padding: 0 4px;
+    border-right: 1px solid var(--border-light); cursor: pointer;
+    transition: width 0.3s, min-width 0.3s; user-select: none;
+  }
+  .room-col-header.expanded { width: 170px; min-width: 170px; }
+  .room-col-header span { font-size: 9px; font-weight: 600; color: var(--text-secondary); }
+  .expand-icon { color: var(--text-muted); transition: transform 0.3s; flex-shrink: 0; }
+  .room-col-header.expanded .expand-icon { transform: rotate(180deg); }
+
+  .dates-scroll { display: flex; flex: 1; overflow: hidden; }
+  .dates-track { display: flex; will-change: transform; }
+  .date-cell {
+    flex: 0 0 auto; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 1px;
+    border-right: 1px solid var(--border-light);
+  }
+  .date-cell.weekend { background: var(--bg-weekend); }
+  .date-cell.today { background: var(--bg-today); }
+  .date-num { font-size: 13px; font-weight: 500; color: var(--text-secondary); }
+  .date-cell.today .date-num { font-weight: 700; color: var(--accent-orange); }
+  .date-name { font-size: 10px; color: var(--text-muted); }
+  .date-cell.today .date-name { font-weight: 600; color: var(--accent-orange); }
+
+  /* ===== ROOMS ===== */
+  .room-grid { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+
+  .room-row {
+    display: flex; min-height: 56px; border-bottom: 1px solid var(--border-light);
+    position: relative;
+  }
+
+  .room-info {
+    width: 58px; min-width: 58px; padding: 4px 4px;
+    display: flex; flex-direction: column; justify-content: center;
+    border-right: 1px solid var(--border-light); cursor: pointer;
+    transition: width 0.3s, min-width 0.3s, background 0.15s;
+    overflow: hidden; user-select: none; position: relative;
+  }
+  .room-info:active { background: #E0F2FE; }
+  .room-info.expanded { width: 170px; min-width: 170px; }
+
+  .room-number { font-size: 12px; font-weight: 700; color: var(--text-primary); white-space: nowrap; }
+  .room-type {
+    font-size: 8px; color: var(--text-muted); white-space: nowrap;
+    overflow: hidden; text-overflow: ellipsis; transition: all 0.3s;
+    max-width: 48px;
+  }
+  .room-info.expanded .room-type { white-space: normal; overflow: visible; max-width: none; }
+
+  /* UX variant label */
+  .ux-label {
+    position: absolute; top: 1px; right: 1px;
+    font-size: 6px; font-weight: 700; color: var(--primary-blue);
+    background: #E0F2FE; padding: 0px 2px; border-radius: 2px;
+    line-height: 1.4; pointer-events: none; z-index: 2;
+  }
+
+  /* A: Inline expand — row grows taller, text wraps */
+  .room-row.ux-inline-expanded { min-height: 80px; }
+  .room-row.ux-inline-expanded .room-info { min-height: 80px; }
+  .room-row.ux-inline-expanded .room-type {
+    white-space: normal; overflow: visible; font-size: 10px;
+    color: var(--text-secondary); margin-top: 2px;
+  }
+  .room-row.ux-inline-expanded .day-cell { min-height: 80px; }
+
+  /* B: Tooltip bubble */
+  .tooltip-bubble {
+    position: absolute; left: 60px; top: 50%; transform: translateY(-50%);
+    background: var(--header-bg); color: white; padding: 8px 12px;
+    border-radius: 8px; font-size: 11px; font-weight: 500;
+    white-space: nowrap; z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    animation: tooltipIn 0.2s ease;
+    max-width: 260px; white-space: normal;
+  }
+  .tooltip-bubble::before {
+    content: ''; position: absolute; left: -6px; top: 50%; transform: translateY(-50%);
+    border: 6px solid transparent; border-right-color: var(--header-bg);
+    border-left: none;
+  }
+  @keyframes tooltipIn { from { opacity: 0; transform: translateY(-50%) scale(0.9); } to { opacity: 1; transform: translateY(-50%) scale(1); } }
+
+  /* C: Slide-over — name slides over day cells */
+  .slide-over {
+    position: absolute; left: 58px; top: 0; bottom: 0;
+    background: white; border-right: 2px solid var(--primary-blue);
+    display: flex; align-items: center; padding: 0 12px;
+    font-size: 11px; font-weight: 500; color: var(--text-primary);
+    z-index: 15; box-shadow: 4px 0 12px rgba(0,0,0,0.1);
+    animation: slideRight 0.25s ease;
+    white-space: nowrap;
+  }
+  @keyframes slideRight { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+  /* D: Bottom sheet mini */
+  .bottom-sheet {
+    position: fixed; bottom: 84px; left: 0; right: 0;
+    background: white; border-radius: 16px 16px 0 0;
+    box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+    padding: 20px; z-index: 30;
+    animation: sheetUp 0.3s ease;
+  }
+  .bottom-sheet .sheet-handle {
+    width: 36px; height: 4px; background: #CBD5E1; border-radius: 2px;
+    margin: 0 auto 16px;
+  }
+  .bottom-sheet .sheet-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .bottom-sheet .sheet-type { font-size: 13px; color: var(--text-secondary); margin-bottom: 4px; }
+  .bottom-sheet .sheet-meta { font-size: 12px; color: var(--text-muted); }
+  .bottom-sheet-backdrop {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.2); z-index: 29;
+    animation: fadeIn 0.2s;
+  }
+  @keyframes sheetUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* E: Marquee scroll */
+  .room-type.marquee-active {
+    animation: marquee 4s linear infinite;
+    white-space: nowrap; overflow: visible;
+  }
+  @keyframes marquee {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-100%); }
+  }
+
+  /* F: Inline chip — full name as a chip below number */
+  .inline-chip {
+    display: inline-block; background: #E0F2FE; color: var(--primary-blue);
+    font-size: 9px; font-weight: 600; padding: 2px 6px; border-radius: 4px;
+    margin-top: 2px; white-space: normal; line-height: 1.3;
+    animation: chipIn 0.2s ease;
+  }
+  @keyframes chipIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+
+  /* G: Full-width banner at top of row */
+  .row-banner {
+    position: absolute; top: 0; left: 0; right: 0;
+    background: var(--primary-blue); color: white;
+    font-size: 10px; font-weight: 600; padding: 4px 10px;
+    z-index: 15; animation: bannerSlide 0.2s ease;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .row-banner .banner-close {
+    background: none; border: none; color: white; font-size: 16px;
+    cursor: pointer; padding: 0 0 0 12px; line-height: 1;
+  }
+  @keyframes bannerSlide { from { transform: translateY(-100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+  /* ===== RESERVATIONS ===== */
+  .day-cells-scroll { display: flex; flex: 1; overflow: hidden; }
+  .day-cells-track { display: flex; will-change: transform; }
+  .day-cell {
+    flex: 0 0 auto; min-height: 56px; border-right: 1px solid var(--border-light);
+    padding: 6px 2px; display: flex; align-items: center; position: relative;
+  }
+  .day-cell.weekend { background: var(--bg-weekend); }
+  .day-cell.today { background: var(--bg-today); }
+
+  .reservation {
+    width: 100%; height: 32px; border-radius: 4px;
+    display: flex; align-items: center; padding: 0 4px;
+    color: white; font-size: 8px; font-weight: 600;
+    overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+    cursor: pointer; position: relative;
+  }
+  .reservation:active { opacity: 0.85; transform: scale(0.97); }
+  .reservation.start { border-radius: 4px 0 0 4px; margin-right: -2px; }
+  .reservation.middle { border-radius: 0; margin: 0 -2px; }
+  .reservation.end { border-radius: 0 4px 4px 0; margin-left: -2px; }
+  .reservation.single { border-radius: 4px; }
+
+  .res-blue { background: #3B82F6; }
+  .res-green { background: #22C55E; }
+  .res-orange { background: #F97316; }
+  .res-purple { background: #A855F7; }
+  .res-red { background: #EF4444; }
+  .res-teal { background: #14B8A6; }
+  .res-gray { background: #94A3B8; }
+  .res-yellow { background: #EAB308; }
+  .res-pink { background: #EC4899; }
+
+  /* ===== TAB BAR ===== */
+
+  /* ===== OVERLAY / POPUP ===== */
+  .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100;
+    justify-content: center; align-items: center; padding: 16px;
+  }
+  .overlay.show { display: flex; animation: fadeIn 0.2s; }
+  @keyframes popupIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .popup {
+    background: var(--bg-white); border-radius: 12px; width: 100%; max-width: 400px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2); overflow: hidden; animation: popupIn 0.2s ease-out;
+  }
+  .popup-header {
+    background: var(--header-bg); padding: 14px 16px;
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .popup-title { color: white; font-size: 15px; font-weight: 700; }
+  .popup-close { color: white; background: none; border: none; cursor: pointer; padding: 4px; display: flex; }
+  .popup-body { padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .popup-field { display: flex; flex-direction: column; gap: 2px; }
+  .popup-label { font-size: 9px; font-weight: 600; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; }
+  .popup-value { font-size: 13px; font-weight: 500; color: var(--text-primary); }
+  .popup-actions { padding: 0 16px 16px; display: flex; gap: 8px; }
+  .popup-btn { flex: 1; padding: 10px; border-radius: 8px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .popup-btn.primary { background: var(--primary-blue); color: white; }
+  .popup-btn.secondary { background: var(--bg-surface); color: var(--text-secondary); border: 1px solid var(--border-light); }
+
+  .res-popup .popup-header { position: relative; }
+  .res-popup .popup-header .res-color-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; }
+  .res-popup .res-meta { display: flex; gap: 16px; }
+  .res-popup .res-meta-item { display: flex; flex-direction: column; gap: 2px; }
+
+  /* ===== TOAST ===== */
+  .toast {
+    position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: var(--header-bg); color: white; padding: 10px 20px;
+    border-radius: 8px; font-size: 13px; font-weight: 500;
+    z-index: 200; opacity: 0; transition: opacity 0.3s; pointer-events: none;
+    white-space: nowrap;
+  }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-left">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    <div class="hotel-info">
+      <div class="hotel-name">Kusá</div>
+      <div class="hotel-sub">★★★★ Hotel AGATKA Bratislava</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <button class="btn-new" onclick="showToast('Nová rezervace')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nová
+    </button>
+  </div>
+</div>
+
+<!-- CALENDAR BAR -->
+<div class="calendar-bar">
+  <div class="cal-title">Kalendář</div>
+  <div class="cal-controls">
+    <span class="month-label" id="monthLabel"></span>
+    <button class="nav-btn" onclick="navigateDays(-visibleDays)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+    <button class="nav-btn" onclick="navigateDays(visibleDays)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="grid-wrapper">
+  <div class="date-header">
+    <div class="room-col-header" id="roomColHeader" onclick="toggleExpand()">
+      <span>Pokoj</span>
+      <svg class="expand-icon" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
+    </div>
+    <div class="dates-scroll" id="datesScroll">
+      <div class="dates-track" id="datesTrack"></div>
+    </div>
+  </div>
+  <div class="room-grid" id="roomGrid"></div>
+</div>
+
+
+<!-- OVERLAY -->
+<div class="overlay" id="overlay" onclick="closePopup()">
+  <div class="popup" id="popup" onclick="event.stopPropagation()"></div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const TODAY = new Date(2026, 1, 16);
+
+const rooms = [
+  { id:'201', number:'201', type:'2+0 Dvojlůžkový pokoj Superior s výhledem na zahradu',
+    capacity:'2 dospělí', floor:'2. patro',
+    uxMode:'inline', uxLabel:'A' },
+
+  { id:'209', number:'209', type:'2+0 Dvojlůžková izba Comfort s klimatizací a minibarem',
+    capacity:'2 dospělí', floor:'2. patro',
+    uxMode:'tooltip', uxLabel:'B' },
+
+  { id:'210', number:'210', type:'2+0 Dvojlůžková izba De Luxe s balkónem a výhledem na Dunaj',
+    capacity:'2 dospělí', floor:'2. patro',
+    uxMode:'slideover', uxLabel:'C' },
+
+  { id:'301', number:'301', type:'2+0 Dvojlůžkový pokoj Executive s terasou a whirlpool vanou',
+    capacity:'2 dospělí', floor:'3. patro',
+    uxMode:'bottomsheet', uxLabel:'D' },
+
+  { id:'102', number:'102', type:'2+1 Dvojlůžková izba Standard s přistýlkou a dětským koutkem',
+    capacity:'2+1', floor:'1. patro',
+    uxMode:'marquee', uxLabel:'E' },
+
+  { id:'206', number:'206', type:'2+1 Dvojlůžková izba Business s pracovním stolem a trezorem',
+    capacity:'2+1', floor:'2. patro',
+    uxMode:'chip', uxLabel:'F' },
+
+  { id:'208', number:'208', type:'2+1 Dvojlůžková izba Romantic s výhledem na centrum města',
+    capacity:'2+1', floor:'2. patro',
+    uxMode:'banner', uxLabel:'G' },
+
+  { id:'308', number:'308', type:'2+1 Dvojlůžkový apartmán Family Suite s kuchyňkou a obývákem',
+    capacity:'2+2', floor:'3. patro',
+    uxMode:'modal', uxLabel:'H' },
+
+  { id:'202', number:'202', type:'2+1 Trojlůžkový pokoj Economy s vlastní koupelnou',
+    capacity:'2+1', floor:'2. patro',
+    uxMode:'inline', uxLabel:'A' },
+
+  { id:'211', number:'211', type:'1+0 Jednolůžkový pokoj Budget bez okna s ventilací',
+    capacity:'1', floor:'2. patro',
+    uxMode:'tooltip', uxLabel:'B' },
+
+  { id:'303', number:'303', type:'2+2 Rodinný apartmán Premium s kuchyňkou, terasou a dětským hřištěm',
+    capacity:'2+2', floor:'3. patro',
+    uxMode:'slideover', uxLabel:'C' },
+];
+
+const reservations = {
+  '209': [ { start:-3, duration:2, guest:'Nováková M.', color:'res-green', source:'Booking.com' }, { start:1, duration:3, guest:'Horák J.', color:'res-blue', source:'Přímá' } ],
+  '210': [ { start:-1, duration:4, guest:'Strauss S.', color:'res-purple', source:'Expedia' } ],
+  '301': [ { start:2, duration:3, guest:'Baldwin A.', color:'res-orange', source:'Booking.com' } ],
+  '102': [ { start:-4, duration:3, guest:'Zachariášová', color:'res-teal', source:'Přímá' }, { start:0, duration:2, guest:'Strauss K.', color:'res-blue', source:'Přímá' } ],
+  '206': [ { start:2, duration:4, guest:'Chinaski H.', color:'res-red', source:'Slevomat' } ],
+  '208': [ { start:-1, duration:3, guest:'Lewis L.', color:'res-green', source:'Booking.com' } ],
+  '308': [ { start:0, duration:1, guest:'BLOKACE', color:'res-gray', source:'Blokace' } ],
+  '202': [ { start:-2, duration:6, guest:'Novotný K.', color:'res-yellow', source:'Přímá' } ],
+  '211': [ { start:1, duration:2, guest:'Melicharová', color:'res-pink', source:'Slevomat' } ],
+  '303': [ { start:-1, duration:5, guest:'Paris Family', color:'res-orange', source:'Přímá' } ],
+};
+
+let expanded = false;
+let startDayOffset = -2;
+let visibleDays = 5;
+let dayWidth = 0;
+const ROOM_COL_NARROW = 58;
+const ROOM_COL_WIDE = 170;
+let touchStartX = 0, touchStartY = 0, isDragging = false, currentTranslateX = 0;
+let activeTooltip = null;
+let activeSlideOver = null;
+let activeBanner = null;
+let activeInlineRow = null;
+let activeChipRoom = null;
+let activeMarqueeRoom = null;
+
+const dayNames = ['Ne','Po','Út','St','Čt','Pá','So'];
+const monthNames = ['Leden','Únor','Březen','Duben','Květen','Červen','Červenec','Srpen','Září','Říjen','Listopad','Prosinec'];
+
+function getDate(offset) { const d = new Date(TODAY); d.setDate(d.getDate()+offset); return d; }
+function isWeekend(d) { return d.getDay()===0||d.getDay()===6; }
+function isToday(o) { return o===0; }
+
+function getRoomColWidth() {
+  return expanded ? ROOM_COL_WIDE : ROOM_COL_NARROW;
+}
+
+function calculateDayWidth() {
+  const screenW = document.documentElement.clientWidth;
+  const rw = getRoomColWidth();
+  const available = screenW - rw;
+
+  // Dynamically calculate how many days to show
+  // Aim for day columns ~60px wide minimum
+  const minDayW = 56;
+  visibleDays = Math.max(3, Math.min(7, Math.floor(available / minDayW)));
+
+  dayWidth = available / visibleDays;
+}
+
+function updateMonthLabel() {
+  const f = getDate(startDayOffset), l = getDate(startDayOffset+visibleDays-1);
+  document.getElementById('monthLabel').textContent = f.getMonth()===l.getMonth()
+    ? monthNames[f.getMonth()]+' '+f.getFullYear()
+    : monthNames[f.getMonth()].substring(0,3)+'–'+monthNames[l.getMonth()]+' '+l.getFullYear();
+}
+
+function renderDates() {
+  calculateDayWidth();
+  const track = document.getElementById('datesTrack');
+  let html = '';
+  for (let i=-3; i<visibleDays+9; i++) {
+    const o = startDayOffset+i, d = getDate(o);
+    html += `<div class="date-cell ${isWeekend(d)?'weekend':''} ${isToday(o)?'today':''}" style="width:${dayWidth}px">
+      <span class="date-num">${d.getDate()}.</span><span class="date-name">${dayNames[d.getDay()]}</span></div>`;
+  }
+  track.innerHTML = html;
+  track.style.transform = `translateX(${-3*dayWidth}px)`;
+  track.style.transition = 'none';
+}
+
+function clearAllInteractions() {
+  if (activeTooltip) { activeTooltip.remove(); activeTooltip = null; }
+  if (activeSlideOver) { activeSlideOver.remove(); activeSlideOver = null; }
+  if (activeBanner) { activeBanner.remove(); activeBanner = null; }
+  if (activeInlineRow) { activeInlineRow.classList.remove('ux-inline-expanded'); activeInlineRow = null; }
+  if (activeChipRoom) {
+    const chip = activeChipRoom.querySelector('.inline-chip');
+    if (chip) chip.remove();
+    activeChipRoom = null;
+  }
+  if (activeMarqueeRoom) {
+    const rt = activeMarqueeRoom.querySelector('.room-type');
+    if (rt) { rt.classList.remove('marquee-active'); rt.textContent = activeMarqueeRoom.dataset.shortType; }
+    activeMarqueeRoom = null;
+  }
+  const bs = document.getElementById('bottomSheet');
+  if (bs) bs.remove();
+  const bsb = document.getElementById('bottomSheetBackdrop');
+  if (bsb) bsb.remove();
+}
+
+function handleRoomTap(roomId, event) {
+  event.stopPropagation();
+  const room = rooms.find(r => r.id === roomId);
+  if (!room) return;
+  const el = event.currentTarget;
+  const row = el.closest('.room-row');
+
+  // If same interaction is active, clear it
+  if (room.uxMode === 'inline' && activeInlineRow === row) { clearAllInteractions(); return; }
+  if (room.uxMode === 'tooltip' && activeTooltip) { clearAllInteractions(); return; }
+  if (room.uxMode === 'slideover' && activeSlideOver) { clearAllInteractions(); return; }
+  if (room.uxMode === 'chip' && activeChipRoom === el) { clearAllInteractions(); return; }
+  if (room.uxMode === 'marquee' && activeMarqueeRoom === el) { clearAllInteractions(); return; }
+  if (room.uxMode === 'banner' && activeBanner) { clearAllInteractions(); return; }
+
+  clearAllInteractions();
+
+  switch(room.uxMode) {
+    case 'inline': {
+      row.classList.add('ux-inline-expanded');
+      const rt = el.querySelector('.room-type');
+      rt.textContent = room.type;
+      activeInlineRow = row;
+      break;
+    }
+    case 'tooltip': {
+      const tip = document.createElement('div');
+      tip.className = 'tooltip-bubble';
+      tip.innerHTML = `<strong>${room.number}</strong> · ${room.type}`;
+      row.appendChild(tip);
+      activeTooltip = tip;
+      setTimeout(() => { if (activeTooltip === tip) { tip.remove(); activeTooltip = null; } }, 4000);
+      break;
+    }
+    case 'slideover': {
+      const slide = document.createElement('div');
+      slide.className = 'slide-over';
+      slide.innerHTML = `<strong style="margin-right:6px">${room.number}</strong> ${room.type}`;
+      slide.onclick = (e) => { e.stopPropagation(); clearAllInteractions(); };
+      row.appendChild(slide);
+      activeSlideOver = slide;
+      setTimeout(() => { if (activeSlideOver === slide) { slide.remove(); activeSlideOver = null; } }, 5000);
+      break;
+    }
+    case 'bottomsheet': {
+      const backdrop = document.createElement('div');
+      backdrop.className = 'bottom-sheet-backdrop';
+      backdrop.id = 'bottomSheetBackdrop';
+      backdrop.onclick = () => clearAllInteractions();
+      document.body.appendChild(backdrop);
+      const sheet = document.createElement('div');
+      sheet.className = 'bottom-sheet';
+      sheet.id = 'bottomSheet';
+      sheet.innerHTML = `
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Pokoj ${room.number}</div>
+        <div class="sheet-type">${room.type}</div>
+        <div class="sheet-meta">${room.capacity} · ${room.floor}</div>`;
+      sheet.onclick = (e) => e.stopPropagation();
+      document.body.appendChild(sheet);
+      break;
+    }
+    case 'marquee': {
+      const rt = el.querySelector('.room-type');
+      el.dataset.shortType = rt.textContent;
+      rt.textContent = room.type + '   ···   ' + room.type;
+      rt.classList.add('marquee-active');
+      activeMarqueeRoom = el;
+      setTimeout(() => {
+        if (activeMarqueeRoom === el) {
+          rt.classList.remove('marquee-active');
+          rt.textContent = el.dataset.shortType;
+          activeMarqueeRoom = null;
+        }
+      }, 6000);
+      break;
+    }
+    case 'chip': {
+      const chip = document.createElement('div');
+      chip.className = 'inline-chip';
+      chip.textContent = room.type;
+      el.appendChild(chip);
+      activeChipRoom = el;
+      break;
+    }
+    case 'banner': {
+      const banner = document.createElement('div');
+      banner.className = 'row-banner';
+      banner.innerHTML = `<span>${room.number} · ${room.type}</span><button class="banner-close" onclick="event.stopPropagation(); clearAllInteractions();">×</button>`;
+      row.appendChild(banner);
+      activeBanner = banner;
+      break;
+    }
+    case 'modal': {
+      showRoomModal(room);
+      break;
+    }
+  }
+}
+
+function showRoomModal(room) {
+  const roomRes = reservations[room.id] || [];
+  let resHtml = '';
+  if (roomRes.length > 0) {
+    resHtml = '<div class="popup-field"><span class="popup-label">Rezervace</span>';
+    roomRes.forEach(r => {
+      const s = getDate(r.start), e = getDate(r.start+r.duration);
+      resHtml += `<div style="display:flex;align-items:center;gap:8px;margin-top:6px">
+        <div style="width:8px;height:8px;border-radius:2px" class="${r.color}"></div>
+        <span class="popup-value" style="font-size:12px">${r.guest} · ${s.getDate()}.${s.getMonth()+1}–${e.getDate()}.${e.getMonth()+1}.</span></div>`;
+    });
+    resHtml += '</div>';
+  }
+  const popup = document.getElementById('popup');
+  popup.innerHTML = `
+    <div class="popup-header">
+      <span class="popup-title">Pokoj ${room.number}</span>
+      <button class="popup-close" onclick="closePopup()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <div class="popup-body">
+      <div class="popup-field"><span class="popup-label">Typ pokoje</span><span class="popup-value">${room.type}</span></div>
+      <div class="popup-field"><span class="popup-label">Kapacita</span><span class="popup-value">${room.capacity}</span></div>
+      <div class="popup-field"><span class="popup-label">Patro</span><span class="popup-value">${room.floor}</span></div>
+      ${resHtml}
+    </div>
+    <div class="popup-actions">
+      <button class="popup-btn secondary" onclick="closePopup()">Zavřít</button>
+      <button class="popup-btn primary" onclick="showToast('+ Rezervace ${room.number}'); closePopup();">+ Rezervace</button>
+    </div>`;
+  popup.style.cssText = '';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function showResPopup(roomId, res, event) {
+  event.stopPropagation();
+  clearAllInteractions();
+  const room = rooms.find(r => r.id === roomId);
+  const s = getDate(res.start), e = getDate(res.start+res.duration);
+  const popup = document.getElementById('popup');
+  popup.className = 'popup res-popup';
+  popup.innerHTML = `
+    <div class="popup-header">
+      <span class="popup-title">${res.guest}</span>
+      <button class="popup-close" onclick="closePopup()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+      <div class="res-color-bar ${res.color}"></div>
+    </div>
+    <div class="popup-body">
+      <div class="res-meta">
+        <div class="res-meta-item"><span class="popup-label">Check-in</span><span class="popup-value">${s.getDate()}.${s.getMonth()+1}.${s.getFullYear()}</span></div>
+        <div class="res-meta-item"><span class="popup-label">Check-out</span><span class="popup-value">${e.getDate()}.${e.getMonth()+1}.${e.getFullYear()}</span></div>
+        <div class="res-meta-item"><span class="popup-label">Nocí</span><span class="popup-value">${res.duration}</span></div>
+      </div>
+      <div class="popup-field"><span class="popup-label">Pokoj</span><span class="popup-value">${room.number} · ${room.type}</span></div>
+      <div class="popup-field"><span class="popup-label">Zdroj</span><span class="popup-value">${res.source}</span></div>
+    </div>
+    <div class="popup-actions">
+      <button class="popup-btn secondary" onclick="closePopup()">Zavřít</button>
+      <button class="popup-btn primary" onclick="showToast('Detail rezervace'); closePopup();">Detail</button>
+    </div>`;
+  popup.style.cssText = '';
+  document.getElementById('overlay').classList.add('show');
+}
+
+function closePopup() {
+  document.getElementById('overlay').classList.remove('show');
+  document.getElementById('popup').className = 'popup';
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function renderGrid() {
+  calculateDayWidth();
+  clearAllInteractions();
+  const grid = document.getElementById('roomGrid');
+  let html = '';
+
+  rooms.forEach(room => {
+    const roomRes = reservations[room.id] || [];
+    const shortType = room.type.length > 14 ? room.type.substring(0,12) + '…' : room.type;
+
+    html += `<div class="room-row" data-room="${room.id}">
+      <div class="room-info ${expanded?'expanded':''}" onclick="handleRoomTap('${room.id}', event)">
+
+        <div class="room-number">${room.number}</div>
+        <div class="room-type">${expanded ? room.type : shortType}</div>
+      </div>
+      <div class="day-cells-scroll"><div class="day-cells-track" style="transform:translateX(${-3*dayWidth}px)">`;
+
+    for (let i=-3; i<visibleDays+9; i++) {
+      const o = startDayOffset+i, d = getDate(o);
+      let resHtml = '';
+      roomRes.forEach(res => {
+        if (o >= res.start && o < res.start+res.duration) {
+          let cls = res.duration===1 ? 'single' : (o===res.start?'start':(o===res.start+res.duration-1?'end':'middle'));
+          const label = o===res.start ? res.guest : '';
+          resHtml = `<div class="reservation ${res.color} ${cls}" onclick="event.stopPropagation(); showResPopup('${room.id}', ${JSON.stringify(res).replace(/"/g,'&quot;')}, event)">${label}</div>`;
+        }
+      });
+      html += `<div class="day-cell ${isWeekend(d)?'weekend':''} ${isToday(o)?'today':''}" style="width:${dayWidth}px">${resHtml}</div>`;
+    }
+    html += `</div></div></div>`;
+  });
+
+  grid.innerHTML = html;
+  setupSwipe();
+}
+
+function toggleExpand() {
+  expanded = !expanded;
+  document.getElementById('roomColHeader').classList.toggle('expanded', expanded);
+  renderDates(); renderGrid(); updateMonthLabel();
+}
+
+function navigateDays(delta) {
+  startDayOffset += delta;
+  renderDates(); renderGrid(); updateMonthLabel();
+}
+
+function setupSwipe() {
+  const grid = document.getElementById('roomGrid');
+  grid.ontouchstart = (e) => {
+    if (e.target.closest('.reservation') || e.target.closest('.room-info')) return;
+    touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
+    isDragging = false; currentTranslateX = 0;
+  };
+  grid.ontouchmove = (e) => {
+    if (e.target.closest('.reservation') || e.target.closest('.room-info')) return;
+    const dx = e.touches[0].clientX - touchStartX;
+    const dy = e.touches[0].clientY - touchStartY;
+    if (!isDragging && Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>10) isDragging = true;
+    if (isDragging) {
+      e.preventDefault(); currentTranslateX = dx;
+      const off = -3*dayWidth + dx;
+      grid.querySelectorAll('.day-cells-track').forEach(t => { t.style.transition='none'; t.style.transform=`translateX(${off}px)`; });
+      document.getElementById('datesTrack').style.transition='none';
+      document.getElementById('datesTrack').style.transform=`translateX(${off}px)`;
+    }
+  };
+  grid.ontouchend = () => {
+    if (isDragging) {
+      if (Math.abs(currentTranslateX) > dayWidth*0.4) startDayOffset -= Math.round(currentTranslateX/dayWidth);
+      renderDates(); renderGrid(); updateMonthLabel();
+    }
+    isDragging = false; currentTranslateX = 0;
+  };
+}
+
+// Click outside to dismiss interactions
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.room-info') && !e.target.closest('.tooltip-bubble') &&
+      !e.target.closest('.slide-over') && !e.target.closest('.bottom-sheet') &&
+      !e.target.closest('.row-banner')) {
+    clearAllInteractions();
+  }
+});
+
+function init() {
+  renderDates(); renderGrid(); updateMonthLabel();
+  window.addEventListener('resize', () => { renderDates(); renderGrid(); });
+}
+init();
+</script>
+</body>
+</html>
