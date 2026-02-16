@@ -515,7 +515,9 @@ const reservations = {
 };
 
 let expanded = false;
-let startDayOffset = -4;
+// Start on Feb 12: calculate offset from TODAY (Feb 16)
+const START_DATE = new Date(2026, 1, 12);
+let startDayOffset = Math.round((START_DATE - TODAY) / (1000*60*60*24));
 let visibleDays = 5;
 let dayWidth = 0;
 const ROOM_COL_NARROW = 58;
