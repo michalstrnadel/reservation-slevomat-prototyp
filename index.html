@@ -542,8 +542,8 @@ function getRoomColWidth() {
 }
 
 function calculateDayWidth() {
-  const phoneScreen = document.querySelector('.phone-screen');
-  const screenW = phoneScreen ? phoneScreen.clientWidth || 375 : document.documentElement.clientWidth;
+  const isDesktopMockup = window.innerWidth >= 500;
+  const screenW = isDesktopMockup ? 375 : document.documentElement.clientWidth;
   const rw = getRoomColWidth();
   const available = screenW - rw;
 
@@ -848,17 +848,10 @@ function setupSwipe() {
     isDragging = false; currentTranslateX = 0; touchStartX = null;
   }
 
-  // Touch events (mobile)
+  // Touch events (mobile swipe)
   grid.ontouchstart = (e) => onDragStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
   grid.ontouchmove = (e) => onDragMove(e.touches[0].clientX, e.touches[0].clientY, e);
   grid.ontouchend = onDragEnd;
-
-  // Mouse events (desktop)
-  grid.onmousedown = (e) => { onDragStart(e.clientX, e.clientY, e.target); grid.style.cursor = 'grabbing'; };
-  grid.onmousemove = (e) => { if (touchStartX !== null) onDragMove(e.clientX, e.clientY, e); };
-  grid.onmouseup = () => { onDragEnd(); grid.style.cursor = 'grab'; };
-  grid.onmouseleave = () => { if (touchStartX !== null) { onDragEnd(); grid.style.cursor = 'grab'; } };
-  grid.style.cursor = 'grab';
 }
 
 // Click outside to dismiss interactions
