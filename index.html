@@ -179,7 +179,7 @@
 
   /* D: Bottom sheet mini */
   .bottom-sheet {
-    position: fixed; bottom: 84px; left: 0; right: 0;
+    position: fixed; bottom: 0; left: 0; right: 0;
     background: white; border-radius: 16px 16px 0 0;
     box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
     padding: 20px; z-index: 30;
@@ -306,6 +306,34 @@
     white-space: nowrap;
   }
   .toast.show { opacity: 1; }
+
+  /* ===== PHONE MOCKUP FRAME (desktop only) ===== */
+  @media (min-width: 500px) {
+    html { background: #E5E7EB; height: 100vh; display: flex; justify-content: center; align-items: center; }
+    body {
+      width: 375px; height: 812px; max-width: 375px;
+      border-radius: 40px; overflow: hidden;
+      box-shadow: 0 0 0 10px #1a1a1a, 0 0 0 12px #333, 0 20px 60px rgba(0,0,0,0.3);
+      position: relative;
+    }
+    /* Notch */
+    body::before {
+      content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+      width: 150px; height: 28px; background: #1a1a1a;
+      border-radius: 0 0 18px 18px; z-index: 999;
+    }
+    /* Dynamic island dot */
+    body::after {
+      content: ''; position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
+      width: 70px; height: 8px; background: #0a0a0a;
+      border-radius: 10px; z-index: 1000;
+    }
+    .header { padding-top: 32px; }
+    /* Keep overlays inside phone frame */
+    .overlay, .bottom-sheet-backdrop { position: absolute; }
+    .bottom-sheet { position: absolute; bottom: 0; }
+    .toast { position: absolute; }
+  }
 </style>
 </head>
 <body>
