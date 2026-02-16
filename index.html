@@ -731,31 +731,44 @@ function navigateDays(delta) {
 
 function setupSwipe() {
   const grid = document.getElementById('roomGrid');
-  grid.ontouchstart = (e) => {
-    if (e.target.closest('.reservation') || e.target.closest('.room-info')) return;
-    touchStartX = e.touches[0].clientX; touchStartY = e.touches[0].clientY;
+
+  function onDragStart(x, y, target) {
+    if (target.closest('.reservation') || target.closest('.room-info')) return;
+    touchStartX = x; touchStartY = y;
     isDragging = false; currentTranslateX = 0;
-  };
-  grid.ontouchmove = (e) => {
-    if (e.target.closest('.reservation') || e.target.closest('.room-info')) return;
-    const dx = e.touches[0].clientX - touchStartX;
-    const dy = e.touches[0].clientY - touchStartY;
-    if (!isDragging && Math.abs(dx)>Math.abs(dy) && Math.abs(dx)>10) isDragging = true;
+  }
+  function onDragMove(x, y, e) {
+    if (touchStartX === null) return;
+    const dx = x - touchStartX;
+    const dy = y - touchStartY;
+    if (!isDragging && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) isDragging = true;
     if (isDragging) {
       e.preventDefault(); currentTranslateX = dx;
-      const off = -3*dayWidth + dx;
-      grid.querySelectorAll('.day-cells-track').forEach(t => { t.style.transition='none'; t.style.transform=`translateX(${off}px)`; });
-      document.getElementById('datesTrack').style.transition='none';
-      document.getElementById('datesTrack').style.transform=`translateX(${off}px)`;
+      const off = -3 * dayWidth + dx;
+      grid.querySelectorAll('.day-cells-track').forEach(t => { t.style.transition = 'none'; t.style.transform = `translateX(${off}px)`; });
+      document.getElementById('datesTrack').style.transition = 'none';
+      document.getElementById('datesTrack').style.transform = `translateX(${off}px)`;
     }
-  };
-  grid.ontouchend = () => {
+  }
+  function onDragEnd() {
     if (isDragging) {
-      if (Math.abs(currentTranslateX) > dayWidth*0.4) startDayOffset -= Math.round(currentTranslateX/dayWidth);
+      if (Math.abs(currentTranslateX) > dayWidth * 0.4) startDayOffset -= Math.round(currentTranslateX / dayWidth);
       renderDates(); renderGrid(); updateMonthLabel();
     }
-    isDragging = false; currentTranslateX = 0;
-  };
+    isDragging = false; currentTranslateX = 0; touchStartX = null;
+  }
+
+  // Touch events (mobile)
+  grid.ontouchstart = (e) => onDragStart(e.touches[0].clientX, e.touches[0].clientY, e.target);
+  grid.ontouchmove = (e) => onDragMove(e.touches[0].clientX, e.touches[0].clientY, e);
+  grid.ontouchend = onDragEnd;
+
+  // Mouse events (desktop)
+  grid.onmousedown = (e) => { onDragStart(e.clientX, e.clientY, e.target); grid.style.cursor = 'grabbing'; };
+  grid.onmousemove = (e) => { if (touchStartX !== null) onDragMove(e.clientX, e.clientY, e); };
+  grid.onmouseup = () => { onDragEnd(); grid.style.cursor = 'grab'; };
+  grid.onmouseleave = () => { if (touchStartX !== null) { onDragEnd(); grid.style.cursor = 'grab'; } };
+  grid.style.cursor = 'grab';
 }
 
 // Click outside to dismiss interactions
