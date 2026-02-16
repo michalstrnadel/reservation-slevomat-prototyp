@@ -522,7 +522,7 @@ let visibleDays = 5;
 let dayWidth = 0;
 const ROOM_COL_NARROW = 58;
 const ROOM_COL_WIDE = 170;
-let touchStartX = 0, touchStartY = 0, isDragging = false, currentTranslateX = 0;
+let touchStartX = null, touchStartY = null, isDragging = false, currentTranslateX = 0;
 let activeTooltip = null;
 let activeSlideOver = null;
 let activeBanner = null;
@@ -874,7 +874,8 @@ function init() {
   renderDates(); renderGrid(); updateMonthLabel();
   window.addEventListener('resize', () => { renderDates(); renderGrid(); });
 }
-init();
+// Wait for layout to settle before rendering (ensures phone-screen has correct dimensions)
+requestAnimationFrame(() => { requestAnimationFrame(() => { init(); }); });
 </script>
 </body>
 </html>
